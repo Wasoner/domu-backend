@@ -65,16 +65,12 @@ import com.domu.service.TaskService;
 import com.domu.service.StaffService;
 import com.domu.service.ProviderService;
 import com.domu.service.ServiceOrderService;
-import com.domu.database.TaskRepository;
 import com.domu.dto.TaskRequest;
 import com.domu.dto.StaffRequest;
 import com.domu.dto.ProviderRequest;
 import com.domu.dto.ServiceOrderRequest;
 import com.domu.dto.ServiceOrderStatusRequest;
 import com.domu.dto.QuotationRequest;
-import com.domu.service.ChatRequestService;
-import com.domu.service.UserProfileService;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.domu.security.AuthenticationHandler;
 import com.domu.security.JwtProvider;
 import com.domu.service.InvalidCredentialsException;
@@ -101,9 +97,7 @@ import io.javalin.http.UploadedFile;
 import io.javalin.validation.BodyValidator;
 import io.javalin.http.Context;
 import io.javalin.openapi.plugin.OpenApiPlugin;
-import io.javalin.openapi.plugin.OpenApiPluginConfiguration;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
-import io.javalin.openapi.plugin.swagger.SwaggerConfiguration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,7 +109,6 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import com.domu.email.EmailService;
 
 @Singleton
