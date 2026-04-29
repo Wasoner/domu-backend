@@ -25,6 +25,10 @@ public class AuthenticationHandler implements Handler {
 
     @Override
     public void handle(Context ctx) {
+        if ("OPTIONS".equalsIgnoreCase(ctx.method().name())) {
+            return;
+        }
+
         String header = ctx.header("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
             throw new UnauthorizedResponse("Authorization header missing or invalid");

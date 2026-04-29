@@ -117,6 +117,15 @@ import com.domu.email.EmailService;
 public final class WebServer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebServer.class);
+    private static final List<String> CORS_ALLOWED_ORIGINS = List.of(
+            "http://146.83.194.142:1898",
+            "http://localhost:5173",
+            "http://localhost:1898",
+            "http://localhost:80",
+            "http://127.0.0.1:5173");
+    private static final String CORS_ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
+    private static final String CORS_ALLOWED_HEADERS = "Authorization,Content-Type,X-Building-Id,Accept,Origin";
+    private static final String CORS_EXPOSED_HEADERS = "Content-Disposition";
 
     private final HikariDataSource dataSource;
     private final UserService userService;
@@ -280,12 +289,38 @@ public final class WebServer {
         });
 
         registerExceptionHandlers(javalin);
+        registerCors(javalin);
         registerRoutes(javalin);
         javalin.ws("/ws/chat", chatWebSocketHandler::handle);
         javalin.ws("/ws/notifications", notificationWebSocketHandler::handle);
         javalin.get("/health", ctx -> ctx.result("OK"));
 
         return javalin;
+    }
+
+    private void registerCors(final Javalin javalin) {
+        javalin.before(this::applyCorsHeaders);
+        javalin.options("/*", ctx -> {
+            applyCorsHeaders(ctx);
+            ctx.status(HttpStatus.NO_CONTENT);
+        });
+    }
+
+    private void applyCorsHeaders(final Context ctx) {
+        String origin = ctx.header("Origin");
+        if (origin == null || !CORS_ALLOWED_ORIGINS.contains(origin)) {
+            return;
+        }
+
+        String requestedHeaders = ctx.header("Access-Control-Request-Headers");
+        ctx.header("Access-Control-Allow-Origin", origin);
+        ctx.header("Vary", "Origin");
+        ctx.header("Access-Control-Allow-Credentials", "true");
+        ctx.header("Access-Control-Allow-Methods", CORS_ALLOWED_METHODS);
+        ctx.header("Access-Control-Allow-Headers",
+                requestedHeaders == null || requestedHeaders.isBlank() ? CORS_ALLOWED_HEADERS : requestedHeaders);
+        ctx.header("Access-Control-Expose-Headers", CORS_EXPOSED_HEADERS);
+        ctx.header("Access-Control-Max-Age", "86400");
     }
 
     private void registerRoutes(Javalin javalin) {
@@ -2788,6 +2823,5 @@ public final class WebServer {
         return label.toString().trim();
     }
 }
-
 
 
