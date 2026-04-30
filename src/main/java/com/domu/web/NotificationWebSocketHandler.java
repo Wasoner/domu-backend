@@ -12,11 +12,13 @@ import com.google.inject.Singleton;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class NotificationWebSocketHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationWebSocketHandler.class);
+    private static final long WS_PING_INTERVAL_SECONDS = 15L;
     private final Map<Long, WsContext> userSessions = new ConcurrentHashMap<>();
     private final JwtProvider jwtProvider;
     private final ObjectMapper objectMapper;
@@ -35,6 +37,7 @@ public class NotificationWebSocketHandler {
                 return;
             }
             try {
+                ctx.enableAutomaticPings(WS_PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
                 Long userId = Long.parseLong(jwtProvider.verify(token).getSubject());
                 userSessions.put(userId, ctx);
                 LOGGER.info("User {} connected to notifications WS", userId);

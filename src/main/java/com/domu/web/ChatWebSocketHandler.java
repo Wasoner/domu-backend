@@ -15,11 +15,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class ChatWebSocketHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatWebSocketHandler.class);
+    private static final long WS_PING_INTERVAL_SECONDS = 15L;
     private final Map<Long, WsContext> userSessions = new ConcurrentHashMap<>();
     private final ChatService chatService;
     private final JwtProvider jwtProvider;
@@ -48,9 +50,11 @@ public class ChatWebSocketHandler {
                 return;
             }
             try {
+                ctx.enableAutomaticPings(WS_PING_INTERVAL_SECONDS, TimeUnit.SECONDS);
                 Long userId = Long.parseLong(jwtProvider.verify(token).getSubject());
                 userSessions.put(userId, ctx);
                 LOGGER.info("User {} connected to chat WS", userId);
+                sendPresenceSnapshot(ctx);
                 broadcastPresence(userId, true);
             } catch (Exception e) {
                 ctx.session.close();
@@ -140,6 +144,19 @@ public class ChatWebSocketHandler {
                 } catch (Exception e) {
                     LOGGER.debug("Error broadcasting presence to user {}", id);
                 }
+            }
+        });
+    }
+
+    private void sendPresenceSnapshot(WsContext session) {
+        getOnlineUserIds().forEach(userId -> {
+            try {
+                session.send(Map.of(
+                        "type", "PRESENCE",
+                        "userId", userId,
+                        "online", true));
+            } catch (Exception e) {
+                LOGGER.debug("Error sending presence snapshot for user {}", userId);
             }
         });
     }
