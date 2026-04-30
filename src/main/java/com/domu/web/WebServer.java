@@ -164,6 +164,7 @@ public final class WebServer {
     private final ProviderService providerService;
     private final ServiceOrderService serviceOrderService;
     private final PermissionService permissionService;
+    private final com.domu.config.AppConfig appConfig;
     private final Javalin app;
     private Integer port = -1;
 
@@ -205,7 +206,8 @@ public final class WebServer {
             final NotificationWebSocketHandler notificationWebSocketHandler,
             final ProviderService providerService,
             final ServiceOrderService serviceOrderService,
-            final PermissionService permissionService) {
+            final PermissionService permissionService,
+            final com.domu.config.AppConfig appConfig) {
         this.dataSource = dataSource;
         this.userService = userService;
         this.commonExpenseService = commonExpenseService;
@@ -243,6 +245,7 @@ public final class WebServer {
         this.providerService = providerService;
         this.serviceOrderService = serviceOrderService;
         this.permissionService = permissionService;
+        this.appConfig = appConfig;
         this.app = createApp();
     }
 
@@ -2727,15 +2730,30 @@ public final class WebServer {
     }
 
     private String resolveFrontendBaseUrl() {
-        String envValue = System.getenv("FRONTEND_BASE_URL");
-        if (envValue != null && !envValue.isBlank()) {
-            return envValue.replaceAll("/+$", "");
+        String envValue = normalizeBaseUrl(System.getenv("FRONTEND_BASE_URL"));
+        if (envValue != null) {
+            return envValue;
         }
-        String sysProp = System.getProperty("frontend.base.url");
-        if (sysProp != null && !sysProp.isBlank()) {
-            return sysProp.replaceAll("/+$", "");
+        String sysProp = normalizeBaseUrl(System.getProperty("frontend.base.url"));
+        if (sysProp != null) {
+            return sysProp;
+        }
+        String approvalConfig = normalizeBaseUrl(appConfig.approvalBaseUrl());
+        if (approvalConfig != null) {
+            return approvalConfig;
+        }
+        String approvalEnv = normalizeBaseUrl(System.getenv("APPROVAL_BASE_URL"));
+        if (approvalEnv != null) {
+            return approvalEnv;
         }
         return "http://localhost:5173";
+    }
+
+    private String normalizeBaseUrl(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        return rawValue.trim().replaceAll("/+$", "");
     }
 
     private void sendUserCredentialsEmail(User user, String rawPassword) {
